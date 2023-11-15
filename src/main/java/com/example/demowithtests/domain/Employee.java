@@ -2,6 +2,7 @@ package com.example.demowithtests.domain;
 
 import com.example.demowithtests.util.annotations.entity.Name;
 import com.example.demowithtests.util.annotations.entity.ToLowerCase;
+import com.github.javafaker.Bool;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -40,4 +41,10 @@ public final class Employee {
     @OneToOne  (cascade = CascadeType.ALL)
     @JoinColumn(name = "document_id", referencedColumnName = "id")
     private Document document;
+
+    @Column(name = "is_deleted")
+    private Boolean isDeleted = Boolean.FALSE;
+
+    @Column(name = "is_valid")
+    private Boolean isValid = Boolean.FALSE;
 }

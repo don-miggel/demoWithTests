@@ -178,6 +178,23 @@ public class EmployeeController {
         log.debug("refreshEmployeeName() EmployeeController - end: ");
     }
 
+    @PatchMapping("/users/status/{id}")
+    @ResponseStatus(HttpStatus.OK)
+    public Employee changeEmployeeStatus(@PathVariable("id") Integer id) {
+        log.debug("changing Employee Status() EmployeeController - start: id = {}", id);
+        employeeService.changeValidStatus(id);
+        log.debug("changing Employee Status() EmployeeController - end: ");
+        return employeeService.getById(id);
+    }
+
+    @PatchMapping("/users/premiumstatus/ukr")
+    @ResponseStatus(HttpStatus.OK)
+    public List<Employee> setValidStatusToAllUkrainians() {
+        employeeService.setAllUkrainiansPremiumStatus();
+        return employeeService.filterByCountry("Ukraine");
+
+    }
+
     @PatchMapping("/users/names/body/{id}")
     @ResponseStatus(HttpStatus.OK)
     public Employee refreshEmployeeNameBody(@PathVariable("id") Integer id, @RequestParam String employeeName) {

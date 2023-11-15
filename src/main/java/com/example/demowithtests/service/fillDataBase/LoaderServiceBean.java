@@ -54,6 +54,8 @@ public class LoaderServiceBean implements LoaderService {
                     .country(country)
                     .email(email.toLowerCase().replaceAll(" ", "") + "@mail.com")
                     .addresses(addresses)
+                    .isValid(Boolean.FALSE)
+                    .isDeleted(Boolean.FALSE)
                     .build();
 
             employees.add(employee);

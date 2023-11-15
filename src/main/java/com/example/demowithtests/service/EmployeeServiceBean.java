@@ -46,9 +46,20 @@ public class EmployeeServiceBean implements EmployeeService {
         employeeRepository.saveEmployee(employee.getName(), employee.getEmail(), employee.getCountry(), String.valueOf(employee.getGender()));
     }
 
+    // This method selects all active employees, the results are used by another methods, like getAll()
+    private List<Employee> getAllActiveEmployees(){
+        return employeeRepository
+                .findAll()
+                .stream()
+                .filter(emp->emp.getIsDeleted()
+                        .equals(Boolean.FALSE))
+                .toList();
+    }
+
     @Override
     public List<Employee> getAll() {
-        return employeeRepository.findAll();
+
+        return getAllActiveEmployees();
     }
 
     @Override
@@ -61,18 +72,30 @@ public class EmployeeServiceBean implements EmployeeService {
 
     @Override
     public Employee getById(Integer id) {
+
+        return getEmployee(id);
+        /*
         var employee = employeeRepository.findById(id)
-                // .orElseThrow(() -> new EntityNotFoundException("Employee not found with id = " + id));
-                .orElseThrow(ResourceNotFoundException::new);
-        /* if (employee.getIsDeleted()) {
+              .orElseThrow(ResourceNotFoundException::new);
+        if (employee.getIsDeleted()) {
             throw new EntityNotFoundException("Employee was deleted with id = " + id);
-        }*/
+        }
         return employee;
+
+         */
     }
 
     @Override
     public Employee updateById(Integer id, Employee employee) {
-        return employeeRepository.findById(id)
+
+        var empToUpd = getEmployee(id);
+
+        empToUpd.setName(employee.getName());
+        empToUpd.setEmail(employee.getEmail());
+        empToUpd.setCountry(employee.getCountry());
+        return employeeRepository.save(empToUpd);
+        /*
+        return employeeRepository.findById(id).filter(empl -> empl.getIsDeleted().equals(Boolean.FALSE))
                 .map(entity -> {
                     entity.setName(employee.getName());
                     entity.setEmail(employee.getEmail());
@@ -80,22 +103,67 @@ public class EmployeeServiceBean implements EmployeeService {
                     return employeeRepository.save(entity);
                 })
                 .orElseThrow(() -> new EntityNotFoundException("Employee not found with id = " + id));
+
+         */
+    }
+
+    //It is a private method, which purpose to select active and existing in the DB users
+    private Employee getEmployee(Integer id){
+
+        var employeeFound = employeeRepository.findById(id)
+                .orElseThrow(()-> new EntityNotFoundException("Employee not found with id = " + id));
+        if(employeeFound.getIsDeleted().equals(Boolean.TRUE))
+            throw new ResourceWasDeletedException();
+        return employeeFound;
+    }
+
+    //Set Premium status to all Ukrainians
+    public void setAllUkrainiansPremiumStatus(){
+        getAllActiveEmployees().stream().filter(emp->
+                        emp.getCountry().equals("Ukraine") && emp.getIsValid().equals(Boolean.FALSE))
+                .forEach(emp->
+                {
+                    emp.setIsValid(Boolean.TRUE);
+                    employeeRepository.save(emp);
+                }
+                );
+    }
+
+    //Change Employee status, this method acts like a toggle, if status is FALSe, it changes it to TRUE
+    // and vice versa
+    public Employee changeValidStatus(Integer id){
+        Employee emp = getEmployee(id);
+        if (emp.getIsValid().equals(Boolean.FALSE))
+            emp.setIsValid(Boolean.TRUE);
+        else
+            emp.setIsValid(Boolean.FALSE) ;
+        employeeRepository.save(emp);
+        return emp;
     }
 
     @Override
     public void removeById(Integer id) {
         //repository.deleteById(id);
-        var employee = employeeRepository.findById(id)
-                // .orElseThrow(() -> new EntityNotFoundException("Employee not found with id = " + id));
-                .orElseThrow(ResourceWasDeletedException::new);
-        //employee.setIsDeleted(true);
-        employeeRepository.delete(employee);
-        //repository.save(employee);
+        var employee = getEmployee(id);
+        employee.setIsDeleted(Boolean.TRUE);
+        //employeeRepository.delete(employee);
+        employeeRepository.save(employee);
     }
 
     @Override
     public void removeAll() {
-        employeeRepository.deleteAll();
+        List<Employee> allEmployees = employeeRepository.findAll();
+        allEmployees
+                .stream()
+                .filter(
+                        emp ->emp
+                                .getIsDeleted().equals(Boolean.FALSE)
+                )
+                .forEach(emp->{
+                    emp.setIsDeleted(Boolean.TRUE);
+                    employeeRepository.save(emp);
+                }
+                );
     }
 
     /*@Override
@@ -128,7 +196,7 @@ public class EmployeeServiceBean implements EmployeeService {
     @Override
     public List<String> getAllEmployeeCountry() {
         log.info("getAllEmployeeCountry() - start:");
-        List<Employee> employeeList = employeeRepository.findAll();
+        List<Employee> employeeList = getAllActiveEmployees();
         List<String> countries = employeeList.stream()
                 .map(country -> country.getCountry())
                 .collect(Collectors.toList());
@@ -143,7 +211,7 @@ public class EmployeeServiceBean implements EmployeeService {
 
     @Override
     public List<String> getSortCountry() {
-        List<Employee> employeeList = employeeRepository.findAll();
+        List<Employee> employeeList = getAllActiveEmployees();
         return employeeList.stream()
                 .map(Employee::getCountry)
                 .filter(c -> c.startsWith("U"))
@@ -153,7 +221,7 @@ public class EmployeeServiceBean implements EmployeeService {
 
     @Override
     public Optional<String> findEmails() {
-        var employeeList = employeeRepository.findAll();
+        var employeeList = getAllActiveEmployees();
 
         var emails = employeeList.stream()
                 .map(Employee::getEmail)

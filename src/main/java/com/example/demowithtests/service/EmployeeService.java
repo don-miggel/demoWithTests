@@ -61,4 +61,8 @@ public interface EmployeeService {
 
     void updateEmployeeByName(String name, Integer id);
 
+    Employee changeValidStatus(Integer id);
+
+    void setAllUkrainiansPremiumStatus();
+
 }
