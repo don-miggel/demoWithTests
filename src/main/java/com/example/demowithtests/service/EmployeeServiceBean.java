@@ -1,6 +1,8 @@
 package com.example.demowithtests.service;
 
 import com.example.demowithtests.domain.Employee;
+import com.example.demowithtests.dto.DeletedEmployeeDto;
+import com.example.demowithtests.dto.EmployeeReadDto;
 import com.example.demowithtests.repository.EmployeeRepository;
 import com.example.demowithtests.service.emailSevice.EmailSenderService;
 import com.example.demowithtests.util.annotations.entity.ActivateCustomAnnotations;
@@ -8,6 +10,7 @@ import com.example.demowithtests.util.annotations.entity.Name;
 import com.example.demowithtests.util.annotations.entity.ToLowerCase;
 import com.example.demowithtests.util.exception.ResourceNotFoundException;
 import com.example.demowithtests.util.exception.ResourceWasDeletedException;
+import com.example.demowithtests.util.mappers.EmployeeMapper;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,7 +30,7 @@ public class EmployeeServiceBean implements EmployeeService {
 
     private final EmployeeRepository employeeRepository;
     private final EmailSenderService emailSenderService;
-
+    private final EmployeeMapper employeeMapper;
 
     @Override
     @ActivateCustomAnnotations({Name.class, ToLowerCase.class})
@@ -57,9 +60,9 @@ public class EmployeeServiceBean implements EmployeeService {
     }
 
     @Override
-    public List<Employee> getAll() {
+    public List<EmployeeReadDto> getAll() {
 
-        return getAllActiveEmployees();
+        return getAllActiveEmployees().stream().map(emp->employeeMapper.toEmployeeReadDto(emp)).toList();
     }
 
     @Override
@@ -142,16 +145,17 @@ public class EmployeeServiceBean implements EmployeeService {
     }
 
     @Override
-    public void removeById(Integer id) {
+    public DeletedEmployeeDto removeById(Integer id) {
         //repository.deleteById(id);
         var employee = getEmployee(id);
         employee.setIsDeleted(Boolean.TRUE);
         //employeeRepository.delete(employee);
-        employeeRepository.save(employee);
+        Employee deletedEmployee = employeeRepository.save(employee);
+        return new DeletedEmployeeDto(deletedEmployee);
     }
 
     @Override
-    public void removeAll() {
+    public List<DeletedEmployeeDto> removeAll() {
         List<Employee> allEmployees = employeeRepository.findAll();
         allEmployees
                 .stream()
@@ -164,6 +168,14 @@ public class EmployeeServiceBean implements EmployeeService {
                     employeeRepository.save(emp);
                 }
                 );
+        return employeeRepository.findAll()
+                .stream()
+                .filter(emp->
+                        emp.getIsDeleted()
+                                .equals(Boolean.TRUE)
+                )
+                .map(DeletedEmployeeDto::new)
+                .toList();
     }
 
     /*@Override
@@ -235,8 +247,10 @@ public class EmployeeServiceBean implements EmployeeService {
     }
 
     @Override
-    public List<Employee> filterByCountry(String country) {
-        return employeeRepository.findEmployeesByCountry(country);
+    public List<EmployeeReadDto> filterByCountry(String country) {
+        return employeeRepository.findEmployeesByCountry(country)
+                .stream()
+                .map(employee ->employeeMapper.toEmployeeReadDto(employee)).toList();
     }
 
     @Override
@@ -269,8 +283,10 @@ public class EmployeeServiceBean implements EmployeeService {
      * @return
      */
     @Override
-    public List<Employee> findByNameContaining(String name) {
-        return employeeRepository.findByNameContaining(name);
+    public List<EmployeeReadDto> findByNameContaining(String name) {
+        return employeeRepository.findByNameContaining(name)
+                .stream()
+                .map(emp->employeeMapper.toEmployeeReadDto(emp)).toList();
     }
 
     /**

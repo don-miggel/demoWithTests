@@ -1,6 +1,8 @@
 package com.example.demowithtests.service;
 
 import com.example.demowithtests.domain.Employee;
+import com.example.demowithtests.dto.DeletedEmployeeDto;
+import com.example.demowithtests.dto.EmployeeReadDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -13,7 +15,7 @@ public interface EmployeeService {
     Employee create(Employee employee);
     void createAndSave(Employee employee);
 
-    List<Employee> getAll();
+    List<EmployeeReadDto> getAll();
 
     Page<Employee> getAllWithPagination(Pageable pageable);
 
@@ -21,9 +23,9 @@ public interface EmployeeService {
 
     Employee updateById(Integer id, Employee plane);
 
-    void removeById(Integer id);
+    DeletedEmployeeDto removeById(Integer id);
 
-    void removeAll();
+    List<DeletedEmployeeDto> removeAll();
 
     //Page<Employee> findByCountryContaining(String country, Pageable pageable);
 
@@ -53,11 +55,13 @@ public interface EmployeeService {
 
     Optional<String> findEmails();
 
-    List<Employee> filterByCountry(String country);
+ //   List<Employee> filterByCountry(String country);
+    List<EmployeeReadDto> filterByCountry(String country);
 
     Set<String> sendEmailsAllUkrainian();
 
-    List<Employee> findByNameContaining(String name);
+//    List<Employee> findByNameContaining(String name);
+    List<EmployeeReadDto> findByNameContaining(String name);
 
     void updateEmployeeByName(String name, Integer id);
 

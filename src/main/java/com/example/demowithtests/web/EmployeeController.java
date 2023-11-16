@@ -1,8 +1,10 @@
 package com.example.demowithtests.web;
 
 import com.example.demowithtests.domain.Employee;
+import com.example.demowithtests.dto.DeletedEmployeeDto;
 import com.example.demowithtests.dto.EmployeeDto;
 import com.example.demowithtests.dto.EmployeeReadDto;
+import com.example.demowithtests.dto.UpdEmployeeNameDto;
 import com.example.demowithtests.service.EmployeeService;
 import com.example.demowithtests.service.EmployeeServiceEM;
 import com.example.demowithtests.util.mappers.EmployeeMapper;
@@ -64,7 +66,7 @@ public class EmployeeController {
 
     @GetMapping("/users")
     @ResponseStatus(HttpStatus.OK)
-    public List<Employee> getAllUsers() {
+    public List<EmployeeReadDto> getAllUsers() {
         return employeeService.getAll();
     }
 
@@ -108,15 +110,16 @@ public class EmployeeController {
     }
 
     @DeleteMapping("/users/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void removeEmployeeById(@PathVariable Integer id) {
-        employeeService.removeById(id);
+    @ResponseStatus(HttpStatus.OK)
+    public DeletedEmployeeDto removeEmployeeById(@PathVariable Integer id) {
+
+        return employeeService.removeById(id);
     }
 
     @DeleteMapping("/users")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void removeAllUsers() {
-        employeeService.removeAll();
+    @ResponseStatus(HttpStatus.OK)
+    public List<DeletedEmployeeDto> removeAllUsers() {
+        return employeeService.removeAll();
     }
 
     @GetMapping("/users/country")
@@ -151,7 +154,7 @@ public class EmployeeController {
 
     @GetMapping("/users/countryBy")
     @ResponseStatus(HttpStatus.OK)
-    public List<Employee> getByCountry(@RequestParam(required = true) String country) {
+    public List<EmployeeReadDto> getByCountry(@RequestParam(required = true) String country) {
         return employeeService.filterByCountry(country);
     }
 
@@ -163,33 +166,36 @@ public class EmployeeController {
 
     @GetMapping("/users/names")
     @ResponseStatus(HttpStatus.OK)
-    public List<Employee> findByNameContaining(@RequestParam String employeeName) {
+    public List<EmployeeReadDto> findByNameContaining(@RequestParam String employeeName) {
         log.debug("findByNameContaining() EmployeeController - start: employeeName = {}", employeeName);
-        List<Employee> employees = employeeService.findByNameContaining(employeeName);
+        List<EmployeeReadDto> employees = employeeService.findByNameContaining(employeeName);
         log.debug("findByNameContaining() EmployeeController - end: employees = {}", employees.size());
         return employees;
     }
 
     @PatchMapping("/users/names/{id}")
     @ResponseStatus(HttpStatus.OK)
-    public void refreshEmployeeName(@PathVariable("id") Integer id, @RequestParam String employeeName) {
+    public UpdEmployeeNameDto refreshEmployeeName(@PathVariable("id") Integer id, @RequestParam String employeeName) {
         log.debug("refreshEmployeeName() EmployeeController - start: id = {}", id);
+        String previousName = employeeService.getById(id).getName();
         employeeService.updateEmployeeByName(employeeName, id);
         log.debug("refreshEmployeeName() EmployeeController - end: ");
+        return new UpdEmployeeNameDto(previousName, employeeService.getById(id));
+
     }
 
     @PatchMapping("/users/status/{id}")
     @ResponseStatus(HttpStatus.OK)
-    public Employee changeEmployeeStatus(@PathVariable("id") Integer id) {
+    public EmployeeReadDto changeEmployeeStatus(@PathVariable("id") Integer id) {
         log.debug("changing Employee Status() EmployeeController - start: id = {}", id);
         employeeService.changeValidStatus(id);
         log.debug("changing Employee Status() EmployeeController - end: ");
-        return employeeService.getById(id);
+        return employeeMapper.toEmployeeReadDto(employeeService.getById(id));
     }
 
     @PatchMapping("/users/premiumstatus/ukr")
     @ResponseStatus(HttpStatus.OK)
-    public List<Employee> setValidStatusToAllUkrainians() {
+    public List<EmployeeReadDto> setValidStatusToAllUkrainians() {
         employeeService.setAllUkrainiansPremiumStatus();
         return employeeService.filterByCountry("Ukraine");
 
@@ -197,10 +203,10 @@ public class EmployeeController {
 
     @PatchMapping("/users/names/body/{id}")
     @ResponseStatus(HttpStatus.OK)
-    public Employee refreshEmployeeNameBody(@PathVariable("id") Integer id, @RequestParam String employeeName) {
+    public EmployeeReadDto refreshEmployeeNameBody(@PathVariable("id") Integer id, @RequestParam String employeeName) {
         log.debug("refreshEmployeeName() EmployeeController - start: id = {}", id);
         employeeService.updateEmployeeByName(employeeName, id);
-        Employee employee = employeeService.getById(id);
+        EmployeeReadDto employee = employeeMapper.toEmployeeReadDto(employeeService.getById(id));
         log.debug("refreshEmployeeName() EmployeeController - end: id = {}", id);
         return employee;
     }
