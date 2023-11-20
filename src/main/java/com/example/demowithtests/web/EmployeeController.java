@@ -1,10 +1,7 @@
 package com.example.demowithtests.web;
 
 import com.example.demowithtests.domain.Employee;
-import com.example.demowithtests.dto.DeletedEmployeeDto;
-import com.example.demowithtests.dto.EmployeeDto;
-import com.example.demowithtests.dto.EmployeeReadDto;
-import com.example.demowithtests.dto.UpdEmployeeNameDto;
+import com.example.demowithtests.dto.*;
 import com.example.demowithtests.service.EmployeeService;
 import com.example.demowithtests.service.EmployeeServiceEM;
 import com.example.demowithtests.util.mappers.EmployeeMapper;
@@ -101,13 +98,67 @@ public class EmployeeController {
 
     @PutMapping("/users/{id}")
     @ResponseStatus(HttpStatus.OK)
-    public EmployeeReadDto refreshEmployee(@PathVariable("id") Integer id, @RequestBody EmployeeDto employee) {
+    public EmployeeReadDto refreshEmployee(@PathVariable("id") Integer id,
+                                           @RequestBody EmployeeDto employee) {
         log.debug("refreshEmployee() EmployeeController - start: id = {}", id);
         Employee entity = employeeMapper.toEmployee(employee);
         EmployeeReadDto dto = employeeMapper.toEmployeeReadDto(employeeService.updateById(id, entity));
         log.debug("refreshEmployee() EmployeeController - end: name = {}", dto.name);
         return dto;
     }
+
+    @PutMapping("/users/ban")
+    @ResponseStatus(HttpStatus.OK)
+    public EmployeeBannedDto banEmployeeById(@RequestParam("id") Integer id,
+                                         @RequestParam String reason,
+                                         @RequestParam Short banDays){
+
+        log.debug("banEmployeeByIdPut() EmployeeController - start: id = {}", id);
+        EmployeeBannedDto bannedEmployee = employeeService.banEmployee(id, reason, banDays);
+        log.debug("banEmployeeByIdPut() EmployeeController - end: id = {}", id);
+
+        return bannedEmployee;
+
+    }
+
+    @PatchMapping("/users/ban/{id}")
+    @ResponseStatus(HttpStatus.OK)
+    public EmployeeBannedDto banEmployeeByIdPatch(@PathVariable("id") Integer id,
+                                             @RequestParam String reason,
+                                             @RequestParam Short banDays){
+
+        log.debug("banEmployeeByIdPatch() EmployeeController - start: id = {}", id);
+        EmployeeBannedDto bannedEmployee = employeeService.banEmployee(id, reason, banDays);
+        log.debug("banEmployeeByIdPatch() EmployeeController - end: id = {}", id);
+        return bannedEmployee;
+    }
+
+    @PutMapping("/users/ban/{country}")
+    @ResponseStatus(HttpStatus.OK)
+    public List<EmployeeBannedDto> banEmployeeByCountry(@PathVariable String country,
+                                                        @RequestParam String reason,
+                                                        @RequestParam Short banDays){
+        System.out.println(reason+banDays);
+        log.debug("banEmployeeByIdPut() EmployeeController - start: id = {}", country, reason, banDays);
+        List<EmployeeBannedDto> bannedEmployees = employeeService.banByCountry(country, reason, banDays);
+        log.debug("banEmployeeByIdPut() EmployeeController - end: id = {}", country, reason, banDays);
+
+        return bannedEmployees;
+    }
+
+    @PatchMapping("/users/ban")
+    @ResponseStatus(HttpStatus.OK)
+    public List<EmployeeBannedDto> banEmployeeByCountryPatch(@RequestParam String country,
+                                                        @RequestParam String reason,
+                                                        @RequestParam Short banDays){
+
+        log.debug("banEmployeeByIdPatch() EmployeeController - start: id = {}", country, reason, banDays);
+        List<EmployeeBannedDto> bannedEmployees = employeeService.banByCountry(country, reason, banDays);
+        log.debug("banEmployeeByIdPatch() EmployeeController - end: id = {}", country, reason, banDays);
+
+        return bannedEmployees;
+    }
+
 
     @DeleteMapping("/users/{id}")
     @ResponseStatus(HttpStatus.OK)

@@ -2,6 +2,7 @@ package com.example.demowithtests.service;
 
 import com.example.demowithtests.domain.Employee;
 import com.example.demowithtests.dto.DeletedEmployeeDto;
+import com.example.demowithtests.dto.EmployeeBannedDto;
 import com.example.demowithtests.dto.EmployeeReadDto;
 import com.example.demowithtests.repository.EmployeeRepository;
 import com.example.demowithtests.service.emailSevice.EmailSenderService;
@@ -65,6 +66,11 @@ public class EmployeeServiceBean implements EmployeeService {
         return getAllActiveEmployees().stream().map(emp->employeeMapper.toEmployeeReadDto(emp)).toList();
     }
 
+    public List<Employee> getAllEmployees() {
+
+        return getAllActiveEmployees().stream().toList();
+    }
+
     @Override
     public Page<Employee> getAllWithPagination(Pageable pageable) {
         log.debug("getAllWithPagination() - start: pageable = {}", pageable);
@@ -108,6 +114,39 @@ public class EmployeeServiceBean implements EmployeeService {
                 .orElseThrow(() -> new EntityNotFoundException("Employee not found with id = " + id));
 
          */
+    }
+
+    @Override
+    public EmployeeBannedDto banEmployee(Integer id, String reason, Short daysOfBan) {
+
+            Employee employeeToBan = getEmployee(id);
+            employeeToBan.setIsBanned(Boolean.TRUE);
+            employeeRepository.save(employeeToBan);
+            return new EmployeeBannedDto(employeeToBan, reason, daysOfBan);
+    }
+
+    @Override
+    public List<EmployeeBannedDto> banByCountry(String country, String reason,
+                                                Short daysOfBan) {
+
+        List<Employee> allEmployees = employeeRepository.findAll();
+
+        allEmployees
+                .stream()
+                .filter(emp->emp.getIsDeleted().equals(Boolean.FALSE))
+                .filter(emp->emp.getIsBanned().equals(Boolean.FALSE))
+                .filter(emp->emp.getCountry().trim().toLowerCase().equals(country.trim().toLowerCase()))
+                .forEach(emp->{
+                    emp.setIsBanned(Boolean.TRUE);
+                    employeeRepository.save(emp);
+                });
+
+        return getAllEmployees()
+                .stream()
+                .filter(emp->emp.getCountry().trim().toLowerCase().equals(country.trim().toLowerCase()))
+                .filter(emp->emp.getIsBanned().equals(Boolean.TRUE))
+                .map(emp-> new EmployeeBannedDto(emp, reason, daysOfBan))
+                .toList();
     }
 
     //It is a private method, which purpose to select active and existing in the DB users

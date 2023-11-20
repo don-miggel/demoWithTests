@@ -47,4 +47,7 @@ public final class Employee {
 
     @Column(name = "is_valid")
     private Boolean isValid = Boolean.FALSE;
+
+    @Column(name = "is_banned")
+    private Boolean isBanned = Boolean.FALSE;
 }
