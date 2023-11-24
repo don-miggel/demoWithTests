@@ -268,4 +268,13 @@ public class EmployeeController {
         employeeService.createAndSave(employee);
         return "employee with name: " + employee.getName() + " saved!";
     }
+
+    @GetMapping("/users/find")
+    @ResponseStatus(HttpStatus.OK)
+    public List<Employee> findEmployeesByCountryAndTitle(@RequestParam String country,
+                                                         @RequestParam String title){
+        return employeeService.findByCountryAndTitle(country, title);
+    }
+
+
 }

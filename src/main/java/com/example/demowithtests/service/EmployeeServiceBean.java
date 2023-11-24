@@ -66,7 +66,13 @@ public class EmployeeServiceBean implements EmployeeService {
         return getAllActiveEmployees().stream().map(emp->employeeMapper.toEmployeeReadDto(emp)).toList();
     }
 
-    public List<Employee> getAllEmployees() {
+    @Override
+    public List<Employee> findByCountryAndTitle(String country, String title) {
+        return employeeRepository.findEmployeesByCountryAndNameStartsWith(country, title);
+    }
+
+
+        public List<Employee> getAllEmployees() {
 
         return getAllActiveEmployees().stream().toList();
     }

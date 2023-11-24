@@ -22,6 +22,15 @@ public interface EmployeeRepository extends JpaRepository<Employee, Integer> {
     @EntityGraph(attributePaths = {"addresses"})
     List<Employee> findEmployeesByCountry(String country);
 
+
+    //find all employees whose name starts with titles
+    // like Mrs, Ms, Dr, Mrs from some particular country
+    @Query(value = "SELECT * FROM users u where country = :country and" +
+            " lower(substring(name, 1, length(:title))) = lower(:title)",
+            nativeQuery = true)
+    List<Employee> findEmployeesByCountryAndNameStartsWith(String country, String title);
+
+
     @EntityGraph(type = EntityGraph.EntityGraphType.FETCH, attributePaths = "addresses")
     List<Employee> findByNameContaining(String name);
 

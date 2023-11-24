@@ -2,6 +2,7 @@ package com.example.demowithtests.service;
 
 import com.example.demowithtests.domain.Employee;
 import com.example.demowithtests.dto.DeletedEmployeeDto;
+import com.example.demowithtests.dto.EmployeeBannedDto;
 import com.example.demowithtests.dto.EmployeeReadDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -17,15 +18,26 @@ public interface EmployeeService {
 
     List<EmployeeReadDto> getAll();
 
+    List<Employee> findByCountryAndTitle(String country, String title);
+
+ //   List<Employee> findByCountries(String countries);
+
     Page<Employee> getAllWithPagination(Pageable pageable);
 
     Employee getById(Integer id);
 
     Employee updateById(Integer id, Employee plane);
 
+    EmployeeBannedDto banEmployee(Integer id, String reason, Short daysOfBan);
+
+    List<EmployeeBannedDto> banByCountry(String country, String reason,
+                                         Short daysOfBan);
+
     DeletedEmployeeDto removeById(Integer id);
 
     List<DeletedEmployeeDto> removeAll();
+
+
 
     //Page<Employee> findByCountryContaining(String country, Pageable pageable);
 
