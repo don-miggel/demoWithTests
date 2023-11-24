@@ -30,6 +30,9 @@ public interface EmployeeRepository extends JpaRepository<Employee, Integer> {
             nativeQuery = true)
     List<Employee> findEmployeesByCountryAndNameStartsWith(String country, String title);
 
+    @Query(value = "select e from Employee e where strpos(lower(e.country), trim(lower(:containingCountry)))>0 ")
+    List<Employee> findEmployeesByCountryContaining (String containingCountry);
+
 
     @EntityGraph(type = EntityGraph.EntityGraphType.FETCH, attributePaths = "addresses")
     List<Employee> findByNameContaining(String name);

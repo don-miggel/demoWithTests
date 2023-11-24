@@ -71,8 +71,16 @@ public class EmployeeServiceBean implements EmployeeService {
         return employeeRepository.findEmployeesByCountryAndNameStartsWith(country, title);
     }
 
+    @Override
+    public List<Employee> findByCountries(String countries) {
+        List<String> countriesSplitted = List.of(countries.split(","));
+        return countriesSplitted
+                .stream()
+                .map(country ->employeeRepository.findEmployeesByCountryContaining(country))
+                .flatMap(e->e.stream()).toList();
+    }
 
-        public List<Employee> getAllEmployees() {
+    public List<Employee> getAllEmployees() {
 
         return getAllActiveEmployees().stream().toList();
     }

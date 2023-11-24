@@ -20,7 +20,7 @@ public interface EmployeeService {
 
     List<Employee> findByCountryAndTitle(String country, String title);
 
- //   List<Employee> findByCountries(String countries);
+    List<Employee> findByCountries(String countries);
 
     Page<Employee> getAllWithPagination(Pageable pageable);
 

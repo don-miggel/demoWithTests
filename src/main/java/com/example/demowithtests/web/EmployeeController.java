@@ -276,5 +276,9 @@ public class EmployeeController {
         return employeeService.findByCountryAndTitle(country, title);
     }
 
-
+    @GetMapping("/users/findby")
+    @ResponseStatus(HttpStatus.OK)
+    public List<Employee> findByCountries(@RequestParam String countries){
+        return employeeService.findByCountries(countries);
+    }
 }
