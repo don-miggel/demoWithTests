@@ -2,6 +2,7 @@ package com.example.demowithtests.dto;
 
 import com.example.demowithtests.domain.Gender;
 import com.example.demowithtests.util.annotations.dto.BlockedEmailDomains;
+import com.example.demowithtests.util.annotations.dto.ToponimCorrect;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -25,6 +26,7 @@ public record EmployeeDto(
         String name,
 
         @Schema(description = "Name of the country.", example = "England", requiredMode = Schema.RequiredMode.REQUIRED)
+        @ToponimCorrect
         String country,
 
         @Email

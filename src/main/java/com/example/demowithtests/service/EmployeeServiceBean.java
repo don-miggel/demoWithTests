@@ -9,8 +9,9 @@ import com.example.demowithtests.service.emailSevice.EmailSenderService;
 import com.example.demowithtests.util.annotations.entity.ActivateCustomAnnotations;
 import com.example.demowithtests.util.annotations.entity.Name;
 import com.example.demowithtests.util.annotations.entity.ToLowerCase;
-import com.example.demowithtests.util.exception.ResourceNotFoundException;
+import com.example.demowithtests.util.exception.CountryListContainingForbiddenChars;
 import com.example.demowithtests.util.exception.ResourceWasDeletedException;
+import com.example.demowithtests.util.exception.SameNameUpdException;
 import com.example.demowithtests.util.mappers.EmployeeMapper;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.AllArgsConstructor;
@@ -23,6 +24,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Slf4j
 @AllArgsConstructor
@@ -73,11 +75,32 @@ public class EmployeeServiceBean implements EmployeeService {
 
     @Override
     public List<Employee> findByCountries(String countries) {
+
+        List<Character> illegalChars = List.of('~', '@', '#', '$', '%', '%', '^', '&',
+                '*', '(', ')', '_', '+' , '=', '!', '₴', '!', '№', ';', '?', '*', '=' , '/',
+                '\\', '|' , '"', ':');
+        List<Character> foundIllegalChars = analyzeStringTowardsIllegalChars(countries, illegalChars);
+        System.out.println(foundIllegalChars);
+        if(foundIllegalChars.size() > 0){
+            throw new CountryListContainingForbiddenChars(foundIllegalChars);
+        }
+
         List<String> countriesSplitted = List.of(countries.split(","));
         return countriesSplitted
                 .stream()
                 .map(country ->employeeRepository.findEmployeesByCountryContaining(country))
                 .flatMap(e->e.stream()).toList();
+    }
+
+    private List<Character> analyzeStringTowardsIllegalChars(String str, List<Character> illegalChars){
+
+        Stream<Character> strToCharList = str
+                .chars()
+                .mapToObj(e -> (char)e)
+                ;
+
+        return strToCharList.filter(ch->illegalChars.contains(ch)).toList();
+
     }
 
     public List<Employee> getAllEmployees() {
@@ -112,6 +135,10 @@ public class EmployeeServiceBean implements EmployeeService {
     public Employee updateById(Integer id, Employee employee) {
 
         var empToUpd = getEmployee(id);
+        String oldName = empToUpd.getName().toLowerCase().replaceAll(" ", "");
+        String newName = employee.getName().toLowerCase().replaceAll(" ","");
+        if(oldName.equals(newName))
+            throw new SameNameUpdException(empToUpd.getName(), empToUpd.getId());
 
         empToUpd.setName(employee.getName());
         empToUpd.setEmail(employee.getEmail());

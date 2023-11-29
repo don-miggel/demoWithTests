@@ -1,6 +1,8 @@
 package com.example.demowithtests.dto;
 
 import com.example.demowithtests.util.annotations.dto.CountryRightFormed;
+import com.example.demowithtests.util.annotations.dto.StreetCorrect;
+import com.example.demowithtests.util.annotations.dto.ToponimCorrect;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -17,8 +19,10 @@ public class AddressDto {
     @CountryRightFormed
     public String country;
 
+    @ToponimCorrect
     public String city;
 
+    @StreetCorrect
     public String street;
 
     //todo: dfhgjkdfhg Jira - 5544

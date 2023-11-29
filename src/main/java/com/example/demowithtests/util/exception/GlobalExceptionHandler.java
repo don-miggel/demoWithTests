@@ -25,6 +25,20 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorDetails, HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler(SameNameUpdException.class)
+    public ResponseEntity<?> sameNameUpdException(SameNameUpdException exc, WebRequest request){
+
+        ErrorDetails errorDetails = new ErrorDetails(new Date(), exc.getMessage(), request.getDescription(true));
+        return new ResponseEntity<>(errorDetails, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(CountryListContainingForbiddenChars.class)
+    public ResponseEntity<?> illegalCharsInCountryList(CountryListContainingForbiddenChars exc,
+                                                       WebRequest request){
+        ErrorDetails errorDetails = new ErrorDetails(new Date(), exc.getMessage(), request.getDescription(true));
+        return new ResponseEntity<>(errorDetails, HttpStatus.BAD_REQUEST);
+    }
+
     @ExceptionHandler(ResourceWasDeletedException.class)
     protected ResponseEntity<MyGlobalExceptionHandler> handleDeleteException() {
         return new ResponseEntity<>(new MyGlobalExceptionHandler("This user was deleted"), HttpStatus.NOT_FOUND);
