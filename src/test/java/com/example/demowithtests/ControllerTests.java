@@ -36,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -159,8 +159,7 @@ public class ControllerTests {
         when(service.updateById(eq(1), any(Employee.class))).thenReturn(employee);
         when(employeeMapper.toEmployeeReadDto(any(Employee.class))).thenReturn(response);
 
-        MockHttpServletRequestBuilder mockRequest = MockMvcRequestBuilders
-                .put("/api/users/1")
+        MockHttpServletRequestBuilder mockRequest = put("/api/users/1")
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(mapper.writeValueAsString(employee));
@@ -227,6 +226,76 @@ public class ControllerTests {
         assertTrue(contentType.contains(MediaType.APPLICATION_JSON_VALUE));
         String responseContent = result.getResponse().getContentAsString();
         assertNotNull(responseContent);
+    }
+
+    /*
+    * @PatchMapping("/users/status/{id}")
+    @ResponseStatus(HttpStatus.OK)
+    public EmployeeReadDto changeEmployeeStatus(@PathVariable("id") Integer id) {
+        log.debug("changing Employee Status() EmployeeController - start: id = {}", id);
+        employeeService.changeValidStatus(id);
+        log.debug("changing Employee Status() EmployeeController - end: ");
+        return employeeMapper.toEmployeeReadDto(employeeService.getById(id));
+        *
+        * public Employee changeValidStatus(Integer id){
+        Employee emp = getEmployee(id);
+        if (emp.getIsValid().equals(Boolean.FALSE))
+            emp.setIsValid(Boolean.TRUE);
+        else
+            emp.setIsValid(Boolean.FALSE) ;
+        employeeRepository.save(emp);
+        return emp;
+    }
+    }
+    * */
+    @Test
+    @DisplayName("PATCH API -> /users/status/{id}")
+    @WithMockUser(roles = "ADMIN")
+    public void testChangeStatus() throws Exception {
+
+        var employeeNotChanged = Employee.builder().id(1).isValid(Boolean.FALSE).name("John").country("US").build();
+
+        var employeeChanged = Employee.builder().id(1).isValid(Boolean.TRUE).name("John").country("US").build();
+        EmployeeReadDto dto = new EmployeeReadDto();
+        dto.id = 1;
+        dto.name  = "John";
+
+        when(service.getById(1)).thenReturn(employeeNotChanged);
+        when(service.changeValidStatus(employeeNotChanged.getId())).thenReturn(employeeChanged);
+        when(employeeMapper.toEmployeeReadDto(any(Employee.class))).thenReturn(dto);
+
+        MockHttpServletRequestBuilder mockRequest =
+                patch("/api/users/status/1")
+               .with(csrf());
+
+        mockMvc.perform(mockRequest)
+               .andExpect(status().isOk());
+
+        verify(service).changeValidStatus(1);
+        verify(service).getById(1);
+
+    }
+
+    @Test
+    @DisplayName("GET ->  /users/find")
+    @WithMockUser(roles = "ADMIN")
+    public void testFindEmployeesByCountryAndTitle() throws Exception {
+
+        var empl1 = Employee.builder().id(1).name("Mr. John").country("UK").build();
+        var empl2 = Employee.builder().id(2).name("Mr. Bob").country("UK").build();
+
+        List<Employee> employeeList = List.of(empl1, empl2);
+
+        when(service.findByCountryAndTitle("UK","Mr.")).thenReturn(employeeList);
+
+        MvcResult result = mockMvc.perform(get("/api/users/find")
+                        .param("country", "UK")
+                        .param("title", "Mr."))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        verify(service, times(1)).findByCountryAndTitle("UK", "Mr.");
+
     }
 
 }
