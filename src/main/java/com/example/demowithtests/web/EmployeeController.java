@@ -1,23 +1,31 @@
 package com.example.demowithtests.web;
 
-import com.example.demowithtests.domain.Employee;
+import com.example.demowithtests.domain.*;
 import com.example.demowithtests.dto.*;
 import com.example.demowithtests.service.EmployeeService;
 import com.example.demowithtests.service.EmployeeServiceEM;
+import com.example.demowithtests.service.document.DocumentServiceBean;
+import com.example.demowithtests.service.history_record.HistoryRecordService;
 import com.example.demowithtests.util.mappers.EmployeeMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.action.internal.EntityActionVetoException;
+import org.springframework.boot.actuate.autoconfigure.observation.ObservationProperties;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -33,6 +41,8 @@ import static com.example.demowithtests.util.Endpoints.USER_ENDPOINT;
 public class EmployeeController {
 
     private final EmployeeService employeeService;
+    private final HistoryRecordService historyRecordService;
+    private final DocumentServiceBean documentServiceBean;
     private final EmployeeServiceEM employeeServiceEM;
     private final EmployeeMapper employeeMapper;
 
@@ -279,6 +289,93 @@ public class EmployeeController {
     @GetMapping("/users/findby")
     @ResponseStatus(HttpStatus.OK)
     public List<Employee> findByCountries(@RequestParam String countries){
+
         return employeeService.findByCountries(countries);
     }
+
+    @PostMapping("/users/{id}/add_doc")
+    @ResponseStatus(HttpStatus.CREATED)
+    public HistoryRecordReadDto createDocumentForUser(@PathVariable("id") Integer id,
+                                                      @RequestBody @Valid DocumentDto documentDto){
+
+        Employee foundEmployee = employeeService.getById(id);
+
+        if(foundEmployee.getDocument() != null){
+            throw new RuntimeException("This user already has an attached document");
+
+        }
+
+        LocalDateTime expireDate = LocalDateTime.of(documentDto.getExpireYear(),
+                                                    documentDto.getExpireMonth(),
+                                                    documentDto.getExpireDay(), 0,0,0);
+
+        Document document = Document.builder().employee(foundEmployee)
+                .expireDate(expireDate)
+                .number(documentDto.getNumber().toUpperCase())
+                .status(Status.CREATED)
+                .documentType(DocumentType.valueOf(documentDto.getType().toUpperCase()))
+                .history(new ArrayList<>())
+                .build();
+
+        foundEmployee.setDocument(document);
+        employeeService.update(foundEmployee);
+
+        String msg = "Document "+ " with number: "+ document.getNumber()+ " type: "+document.getDocumentType() +" was created!";
+
+        HistoryRecordDto newHistoryRecordDto = new HistoryRecordDto(msg, foundEmployee.getDocument());
+        System.out.println(newHistoryRecordDto);
+        return historyRecordService.addHistoryRecord(newHistoryRecordDto);
+
+    }
+
+    @DeleteMapping("/users/{id}/del_doc")
+    @ResponseStatus(HttpStatus.OK)
+    public DocumentDeletedDto deleteDocumentById(@PathVariable("id") Integer id){
+
+        Employee empl = employeeService.getById(id);
+        Document docToDel = empl.getDocument();
+        if(docToDel == null)
+            throw new EntityNotFoundException("User with id: "+ id +" does not have any active document ! ");
+
+        DocumentDeletedDto deletedDto = documentServiceBean.deleteDocumentById(docToDel.getId());
+
+        HistoryRecordDto deletedHistoryRecord  = HistoryRecordDto.builder()
+                .document(docToDel)
+                .description(deletedDto.getMessage())
+                .build();
+
+        historyRecordService.addHistoryRecord(deletedHistoryRecord);
+        return deletedDto;
+
+    }
+
+    @PutMapping("/users/{id}/restore_doc")
+    @ResponseStatus(HttpStatus.OK)
+    public DocumentRestoreDto restoreDocument(@PathVariable("id") Integer id){
+
+        Employee emp = employeeService.getById(id);
+        Document docToRestore= emp.getDocument();
+        if(docToRestore == null)
+            throw new EntityNotFoundException("User with id: "+ id +" does not have any active document ! ");
+
+        DocumentRestoreDto restoredDocument = documentServiceBean.restoreDocument(emp);
+
+        HistoryRecordDto restoredHistoryRecord  = HistoryRecordDto.builder()
+                .document(docToRestore)
+                .description(restoredDocument.getMessage())
+                .build();
+        historyRecordService.addHistoryRecord(restoredHistoryRecord);
+
+        return restoredDocument;
+    }
+
+    @GetMapping("/users/{id}/doc_history")
+    @ResponseStatus(HttpStatus.OK)
+    public List<HistoryRecordReadDto> GetUserDocumentHistory(@PathVariable("id") Integer id){
+
+        Employee emp = employeeService.getById(id);
+        return historyRecordService.getHistoryRecordsForDocument(emp.getDocument());
+
+    }
+
 }

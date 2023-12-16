@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -12,6 +14,7 @@ import java.util.UUID;
 @Builder
 @Entity
 @Table(name = "documents")
+@ToString
 public final class Document {
 
     @Id
@@ -29,11 +32,21 @@ public final class Document {
     @Builder.Default
     private Boolean isHandled = Boolean.FALSE;
 
+    @Enumerated(EnumType.STRING)
+    private Status status;
+
+    @Enumerated(EnumType.STRING)
+    private DocumentType documentType;
+
     @ToString.Exclude
     @OneToOne(mappedBy = "document")
     private Employee employee;
 
+    @OneToMany(mappedBy = "document", fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
+    private List<HistoryRecord> history = new ArrayList<>();
+
     /*@OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "image_id", referencedColumnName = "id")
     private Image image;*/
+
 }
